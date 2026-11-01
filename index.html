@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0a1020" />
+<meta name="description" content="DNS Detective: watch a domain's DNS delegation chain resolve, step by step, with real data." />
+<title>DNS Detective: Domain Resolution Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="ambient a"></div><div class="ambient b"></div>
+<header class="topbar">
+  <a class="brand" href="#top"><span class="brand-mark">D</span><span>DNS Detective<small>Domain resolution lab</small></span></a>
+  <nav><a href="#how">How it works</a><a href="#lab">Try it</a><a href="#records">Record types</a><a href="#faq">FAQ</a></nav>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <p class="tag">Computer Networks project</p>
+    <h1>Follow a domain<br>from root to answer.</h1>
+    <p class="hero-copy">Every website has a name, like github.com, but computers find each other using numbers. DNS is the system that turns one into the other. Here you can watch it happen step by step, using real data.</p>
+    <a class="primary-btn" href="#lab">Start tracing</a>
+  </section>
+
+  <section class="explain" id="how">
+    <div class="section-heading"><h2>DNS in 60 seconds</h2><span class="section-note">No networking background needed</span></div>
+    <p class="lead">Think of DNS as the internet's phone book. You know a website's <b>name</b> (github.com). Computers need its <b>number</b> (an IP address such as 140.82.113.3). DNS finds the number for you in a fraction of a second, every time you open a site.</p>
+    <ol class="how-steps">
+      <li><b>You type a name.</b><span>Your browser needs the number behind it.</span></li>
+      <li><b>A helper takes over.</b><span>A server called a resolver does the searching for you, like a receptionist.</span></li>
+      <li><b>It follows three directories.</b><span>The root says who looks after .com. The .com directory says who looks after github.com. That site's own server gives the number.</span></li>
+      <li><b>You get the number, and it is remembered.</b><span>The answer is saved for a while, so next time it is instant.</span></li>
+    </ol>
+    <div class="path"><p>Read a name from right to left to see the order of the directories:</p><div class="path-row"><span class="seg">www</span><span class="dot">.</span><span class="seg">github</span><span class="dot">.</span><span class="seg">com</span><span class="dot">.</span><span class="seg root">root</span></div><div class="path-row legend"><span>one page of the site</span><span>the website</span><span>the ending (TLD)</span><span>the top (invisible)</span></div></div>
+  </section>
+
+  <section class="workspace" id="lab">
+    <div class="section-heading"><h2>Trace a domain</h2><span class="section-note">Real DNS data, fetched live in your browser</span></div>
+    <div class="lookup-card">
+      <label for="domainInput">Domain name</label>
+      <div class="lookup-row">
+        <div class="input-wrap"><input id="domainInput" value="example.com" spellcheck="false" autocomplete="off" aria-label="Domain name"/><button id="clearBtn" class="clear-btn" aria-label="Clear domain">×</button></div>
+        <button id="traceBtn" class="primary-btn"><span>Trace DNS</span><span class="btn-arrow">↗</span></button>
+      </div>
+      <div class="quick">Try: <button data-d="example.com">example.com</button><button data-d="github.com">github.com</button><button data-d="wikipedia.org">wikipedia.org</button><button data-d="bbc.co.uk">bbc.co.uk</button><button data-d="www.google.com">www.google.com</button></div>
+      <div class="lookup-options">
+        <span class="mode"><span class="status-dot" id="modeDot"></span><span id="modeLabel">Live mode</span></span>
+        <span class="option-right"><label for="recordSelect">Record type</label><select id="recordSelect"><option>A — IPv4</option><option>AAAA — IPv6</option><option>CNAME — Alias</option><option>MX — Mail</option><option>NS — Name server</option><option>TXT — Text</option></select><label class="check-label"><input id="realLookup" type="checkbox" checked> Use live DNS</label></span>
+      </div>
+      <p class="microcopy">With live DNS on, each step is a real DNS-over-HTTPS query to Cloudflare for the NS records of that zone. This reconstructs the delegation chain; it is not a packet capture of the resolver's own traffic. Turn it off for an offline demo with made-up answers.</p>
+    </div>
+
+    <div class="lab-grid">
+      <section class="panel journey-panel">
+        <div class="panel-top"><div><span class="panel-kicker">Resolution path</span><h3>Follow the query</h3></div><span class="pill" id="journeyStatus">Ready</span></div>
+        <div class="journey" id="journey">
+          <div class="journey-line" id="journeyLine"><div class="journey-progress" id="journeyProgress"></div><div class="packet" id="packet"></div></div>
+          <article class="journey-step"><div class="node-icon">⌘</div><div class="step-copy"><div class="step-title">Your device <span class="step-tag">Client</span><span class="step-ms"></span></div><p>Like checking your own contacts first. If the number is not there, it asks a helper.</p><div class="step-data"></div></div><span class="step-state">1</span></article>
+          <article class="journey-step"><div class="node-icon">◈</div><div class="step-copy"><div class="step-title">Recursive resolver <span class="step-tag">Resolver</span><span class="step-ms"></span></div><p>Your helper. It remembers recent answers, or goes and asks the directories for you.</p><div class="step-data"></div></div><span class="step-state">2</span></article>
+          <article class="journey-step"><div class="node-icon">⌂</div><div class="step-copy"><div class="step-title">Root servers <span class="step-tag">Root</span><span class="step-ms"></span></div><p>The top of the directory. It does not know every site, only who looks after each ending (.com, .in, .org).</p><div class="step-data"></div></div><span class="step-state">3</span></article>
+          <article class="journey-step"><div class="node-icon">T</div><div class="step-copy"><div class="step-title">TLD servers <span class="step-tag" id="tldTag">TLD</span><span class="step-ms"></span></div><p>The directory for one ending, like .com. It knows which servers hold each website's details.</p><div class="step-data"></div></div><span class="step-state">4</span></article>
+          <article class="journey-step"><div class="node-icon">▣</div><div class="step-copy"><div class="step-title">Authoritative servers <span class="step-tag">Source of truth</span><span class="step-ms"></span></div><p>The website's own records. This is where the real answer comes from.</p><div class="step-data"></div></div><span class="step-state">5</span></article>
+        </div>
+        <div class="journey-footer"><span id="journeyMessage">Enter a domain and press Trace DNS.</span><button id="resetBtn" class="text-btn">Reset ↺</button></div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="panel result-panel">
+          <div class="panel-top"><div><span class="panel-kicker">Lookup result</span><h3>Resolution summary</h3></div></div>
+          <div class="result-domain" id="resultDomain">example.com</div>
+          <div class="result-status"><span class="status-dot muted" id="resultDot"></span><span id="resultStatus">Waiting for trace</span></div>
+          <div class="metric-grid"><div><span>Record type (kind of info)</span><strong id="metricType">A</strong></div><div><span>TTL (memory time)</span><strong id="metricTtl">–</strong></div><div><span>Total time</span><strong id="metricTime">–</strong></div><div><span>Answers</span><strong id="metricAnswers">–</strong></div></div>
+          <div class="result-answer"><span>Answer data</span><pre id="answerData">Run a trace to see the answer.</pre></div>
+          <div class="mode-note" id="modeNote">Ready.</div>
+        </section>
+        <section class="panel cache-panel">
+          <div class="panel-top"><div><span class="panel-kicker">Resolver memory</span><h3>DNS cache</h3></div><span class="cache-badge" id="cacheBadge">Empty</span></div>
+          <p class="cache-description">Resolvers keep answers until their TTL runs out, so repeat lookups skip the whole walk. Trace the same domain twice to see it.</p>
+          <div class="cache-entry" id="cacheEntry"></div>
+          <button id="flushCacheBtn" class="secondary-btn">Flush cache</button>
+        </section>
+      </aside>
+    </div>
+
+    <section class="panel log-panel">
+      <div class="panel-top"><div><span class="panel-kicker">Query log</span><h3>What was asked, and what came back</h3></div></div>
+      <div class="log" id="queryLog" aria-live="polite"><div class="log-line i"><span>Queries will appear here as the trace runs.</span></div></div>
+    </section>
+  </section>
+
+  <section class="records-section" id="records">
+    <div class="section-heading"><h2>What lives in DNS?</h2><span class="section-note">Select a record type to learn about it</span></div>
+    <div class="record-grid">
+      <button class="record-card selected" data-record="A"><span class="record-symbol">A</span><span class="record-name">Address record</span><code>192.0.2.1</code><p>Maps a hostname to an IPv4 address.</p></button>
+      <button class="record-card" data-record="AAAA"><span class="record-symbol">AAAA</span><span class="record-name">IPv6 address</span><code>2001:db8::1</code><p>Maps a hostname to an IPv6 address.</p></button>
+      <button class="record-card" data-record="CNAME"><span class="record-symbol">CNAME</span><span class="record-name">Canonical name</span><code>www → example.com</code><p>Points one name at another hostname.</p></button>
+      <button class="record-card" data-record="MX"><span class="record-symbol">MX</span><span class="record-name">Mail exchange</span><code>10 mail.example.com</code><p>Lists the servers that receive email.</p></button>
+      <button class="record-card" data-record="NS"><span class="record-symbol">NS</span><span class="record-name">Name server</span><code>ns1.example.net</code><p>Names the servers responsible for a zone.</p></button>
+      <button class="record-card" data-record="TXT"><span class="record-symbol">TXT</span><span class="record-name">Text record</span><code>v=spf1 …</code><p>Stores text for verification and email security.</p></button>
+    </div>
+    <div class="record-detail" id="recordDetail"><div class="detail-symbol">A</div><div><span class="panel-kicker">Record deep dive</span><h3>Address record (A)</h3><p></p></div><button class="secondary-btn" id="useRecordBtn">Trace this type ↗</button></div>
+  </section>
+
+  <section class="faq-section" id="faq">
+    <div class="section-heading"><h2>Questions</h2></div>
+    <details><summary>Is DNS the same as the internet?</summary><p>No. DNS is one service that runs on the internet. It only translates names to addresses. The actual page still comes from the website's server.</p></details>
+    <details><summary>What are 8.8.8.8 and 1.1.1.1?</summary><p>They are public resolvers, run by Google and Cloudflare. You can use them instead of your provider's resolver. This page asks Cloudflare.</p></details>
+    <details><summary>Why can one site have several IP addresses?</summary><p>Big sites spread visitors over many servers. DNS can return several addresses, or different ones depending on where you are, so no single server is overloaded.</p></details>
+    <details><summary>What does the TTL number mean?</summary><p>It is how many seconds an answer can be remembered. A low TTL (60) lets a site change servers quickly. A high one (86400, one day) means fewer lookups.</p></details>
+    <details><summary>What is NXDOMAIN?</summary><p>It means the name does not exist at all. This page stops the trace and shows it in red if you try a made-up domain.</p></details>
+    <details><summary>Does this page show my computer's real DNS traffic?</summary><p>No. A browser cannot send raw DNS packets. This page asks Cloudflare for the real name server records at each level, which rebuilds the real path a lookup follows.</p></details>
+  </section>
+
+  <section class="bottom-cta"><div><h2>Try another domain</h2><p>Change the record type or pick a country domain like .co.uk and compare the chains.</p></div><button class="primary-btn" id="bottomTrace">Start tracing <span class="btn-arrow">↗</span></button></section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
